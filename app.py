@@ -18,6 +18,8 @@ from models import AnalyzeResult
 
 from uuid import uuid4
 
+from Test_track import get_result
+
 app = FastAPI()
 TMP_UPLOADS_DIRECTORY = 'uploads'
 
@@ -47,7 +49,7 @@ async def download(data: List[List[str]]) -> FileResponse:
 
 @app.post("/upload")
 async def upload_video(videos: List[UploadFile] = File(...),
-                       jsonFiles: List[UploadFile] = File(...)) -> List[Dict]:
+                       jsonFiles: List[UploadFile] = File(...)) -> List[List]:
     if TMP_UPLOADS_DIRECTORY not in os.listdir():
         os.mkdir(TMP_UPLOADS_DIRECTORY)
 
@@ -56,34 +58,34 @@ async def upload_video(videos: List[UploadFile] = File(...),
 
     for video in videos:
         filename = str(uuid4()) + '.mp4'
-        videos_list.append(filename)
+        videos_list.append(os.path.join(TMP_UPLOADS_DIRECTORY, filename))
         async with aiofiles.open(os.path.join(TMP_UPLOADS_DIRECTORY, filename), 'wb') as out_file:
             content = await video.read()  # async read
             await out_file.write(content)  # async write
 
     for file in jsonFiles:
         filename = str(uuid4()) + '.json'
-        jsonFiles_list.append(filename)
+        jsonFiles_list.append(os.path.join(TMP_UPLOADS_DIRECTORY, filename))
         async with aiofiles.open(os.path.join(TMP_UPLOADS_DIRECTORY, filename), 'wb') as out_file:
             content = await file.read()  # async read
             await out_file.write(content)  # async write
 
-    await asyncio.sleep(1)
+    result = get_result(videos_list, jsonFiles_list)
 
     # Возвращаем результаты проверки в формате JSON
-    results = [{
-        "file_name": "KRA-2-7-2023-08-22-evening",
-        "car": "car",
-        "quantity_car": random.randint(100, 1000),
-        "average_speed_car": 32.64,
-        "van": "van",
-        "quantity_van": 15,
-        "average_speed_van": 25.30,
-        "bus": "bus",
-        "quantity_bus": 22,
-        "average_speed_bus": 26.75
-    }]
-    return results
+    # results = [{
+    #     "file_name": "KRA-2-7-2023-08-22-evening",
+    #     "car": "car",
+    #     "quantity_car": random.randint(100, 1000),
+    #     "average_speed_car": 32.64,
+    #     "van": "van",
+    #     "quantity_van": 15,
+    #     "average_speed_van": 25.30,
+    #     "bus": "bus",
+    #     "quantity_bus": 22,
+    #     "average_speed_bus": 26.75
+    # }]
+    return result
 
 
 if __name__ == '__main__':
